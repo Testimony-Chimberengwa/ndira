@@ -6,7 +6,7 @@ body {
   background: linear-gradient(160deg, #e8f5e9 0%, #fff8e7 100%);
   min-height: 100vh;
   color: #1f2937;
-  font-family: var(--font-geist-sans), sans-serif;
+  font-family: var(--font-inter), sans-serif;
 }
 
 .glass-card {

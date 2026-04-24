@@ -34,7 +34,7 @@ export default function Home() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden px-4 pb-28 pt-8 sm:px-6 lg:px-8">
+    <main className="relative min-h-screen overflow-x-hidden px-4 pb-24 pt-8 sm:px-6 lg:px-8">
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <motion.div
           aria-hidden="true"

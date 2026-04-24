@@ -51,7 +51,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-[480px] px-4 pb-[100px] pt-4">
+    <main className="mx-auto min-h-screen w-full max-w-[480px] px-4 pb-24 pt-4">
       <div className="space-y-4">
         <motion.div
           initial="hidden"

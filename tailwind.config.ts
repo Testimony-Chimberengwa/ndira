@@ -2,6 +2,14 @@ import type { Config } from "tailwindcss";
 
 const config = {
   darkMode: false,
+  safelist: [
+    "backdrop-blur-md",
+    "backdrop-blur-lg",
+    "backdrop-blur-xl",
+    "bg-white/30",
+    "bg-white/20",
+    "border-white/40",
+  ],
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
