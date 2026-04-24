@@ -18,6 +18,25 @@ const pageVariants = {
 
 const pageTransition = { duration: 0.35 };
 
+function isDiagnosisResult(value: unknown): value is DiagnosisResult {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const candidate = value as Partial<DiagnosisResult>;
+
+  return (
+    typeof candidate.pest_or_disease === "string" &&
+    typeof candidate.confidence_percent === "number" &&
+    typeof candidate.severity === "string" &&
+    typeof candidate.estimated_yield_loss_percent === "number" &&
+    typeof candidate.summary === "string" &&
+    Array.isArray(candidate.treatment_steps) &&
+    typeof candidate.prevention_tip === "string" &&
+    typeof candidate.local_remedy === "string"
+  );
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<NavTab>("farm");
@@ -32,7 +51,13 @@ export default function DashboardPage() {
     }
 
     try {
-      const parsed = JSON.parse(stored) as DiagnosisResult;
+      const parsed: unknown = JSON.parse(stored);
+
+      if (!isDiagnosisResult(parsed)) {
+        router.push("/");
+        return;
+      }
+
       setDiagnosis(parsed);
     } catch {
       router.push("/");
