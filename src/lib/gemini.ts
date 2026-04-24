@@ -4,39 +4,6 @@ import type { DiagnosisResult } from "@/lib/types";
 const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY ?? "");
 const modelNames = ["gemini-1.5-flash-latest", "gemini-1.5-flash", "gemini-2.0-flash"];
 
-const fallbackDiagnosis: DiagnosisResult = {
-  pest_or_disease: "Likely nutrient stress or minor pest pressure",
-  confidence_percent: 72,
-  severity: "medium",
-  estimated_yield_loss_percent: 18,
-  summary: "The symptoms point to a stress pattern that could come from either pests or a nutrient imbalance. Check the leaves closely and stabilize moisture while you inspect for signs of insects or disease.",
-  treatment_steps: [
-    {
-      step: 1,
-      icon: "💧",
-      title: "Stabilize moisture",
-      description: "Keep the soil evenly moist for the next few days so the plant is not under extra stress.",
-      urgency: "immediate",
-    },
-    {
-      step: 2,
-      icon: "🔍",
-      title: "Inspect leaves closely",
-      description: "Check both sides of the leaves for holes, webbing, insects, or spotting.",
-      urgency: "within_3_days",
-    },
-    {
-      step: 3,
-      icon: "🌿",
-      title: "Feed with a balanced remedy",
-      description: "Apply a gentle foliar feed or compost tea if the crop looks pale or weak.",
-      urgency: "this_week",
-    },
-  ],
-  prevention_tip: "Scout weekly and keep records of weather, watering, and leaf changes so problems are caught early.",
-  local_remedy: "Use compost tea or a diluted foliar feed and keep watering steady while the crop recovers.",
-};
-
 export async function diagnoseCrop(input: {
   description: string;
   cropType?: string;
@@ -44,7 +11,7 @@ export async function diagnoseCrop(input: {
   soilCondition?: string;
 }): Promise<DiagnosisResult> {
   if (!process.env.GEMINI_API_KEY) {
-    return fallbackDiagnosis;
+    throw new Error("Missing GEMINI_API_KEY environment variable.");
   }
 
   const systemContext =
@@ -65,11 +32,14 @@ export async function diagnoseCrop(input: {
 
       return JSON.parse(normalizedText) as DiagnosisResult;
     } catch (error) {
-      console.error(`Gemini model ${modelName} failed:`, error);
+      const message = error instanceof Error ? error.message : String(error);
+      if (!message.includes("404") && !message.includes("not found")) {
+        throw error;
+      }
     }
   }
 
-  return fallbackDiagnosis;
+  throw new Error("Unable to generate diagnosis with the available Gemini models.");
 }
 
 export async function getDiagnosisFromGemini(message: string): Promise<DiagnosisResult> {
