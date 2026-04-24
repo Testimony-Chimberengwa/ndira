@@ -1,36 +1,133 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ndira
 
-## Getting Started
+Ndira is an AI-assisted farming companion built with Next.js 14, TypeScript, and Tailwind CSS.
+It helps farmers describe crop symptoms in plain language and receive diagnosis insights with treatment steps.
 
-First, run the development server:
+## Tech Stack
+
+- Next.js 14 (App Router)
+- TypeScript
+- Tailwind CSS
+- Gemini SDK (`@google/generative-ai`)
+- Vercel Analytics (`@vercel/analytics`)
+- Framer Motion
+- React Hook Form
+- Axios
+- Lucide React icons
+
+## Project Setup Used
+
+The app was scaffolded with:
+
+```bash
+npx create-next-app@latest ndira --typescript --tailwind --eslint --app --src-dir --import-alias "@/*"
+```
+
+Then dependencies were added:
+
+```bash
+npm install @google/generative-ai @vercel/analytics lucide-react framer-motion react-hook-form axios
+```
+
+## Folder Structure
+
+```text
+src/
+  app/
+    api/
+      diagnose/
+        route.ts
+    dashboard/
+      page.tsx
+    layout.tsx
+    page.tsx
+  components/
+    ui/
+      GlassCard.tsx
+      GaugeChart.tsx
+      TreatmentCard.tsx
+      WeatherStrip.tsx
+      VoiceInput.tsx
+      NavBar.tsx
+    ChatInput.tsx
+    DiagnosisHero.tsx
+  lib/
+    gemini.ts
+    types.ts
+  styles/
+    globals.css
+```
+
+## Configuration Highlights
+
+- Tailwind theme extended with:
+  - `primary: #2E7D32`
+  - `amber: #F9A825`
+  - `cream: #FFF8E7`
+  - `sage: #E8F5E9`
+- `darkMode` disabled (`false`)
+- Body background gradient:
+  - `linear-gradient(160deg, #E8F5E9 0%, #FFF8E7 100%)`
+
+## Environment Variables
+
+Create `.env.local` in the project root:
+
+```bash
+GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+If `GEMINI_API_KEY` is not set, the API route uses a safe fallback diagnosis response.
+
+## Scripts
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run build
+npm run start
+npm run lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## API Endpoint
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### POST `/api/diagnose`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Request:
 
-## Learn More
+```json
+{
+  "message": "My maize leaves are turning yellow and curling."
+}
+```
 
-To learn more about Next.js, take a look at the following resources:
+Response shape:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```json
+{
+  "diagnosis": "...",
+  "confidence": 78,
+  "riskLevel": "medium",
+  "treatment": [
+    { "title": "...", "details": "..." }
+  ]
+}
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Pages
 
-## Deploy on Vercel
+- `/` Home intake page with hero, chat input, weather strip, and bottom navigation
+- `/dashboard` Diagnosis summary with gauge and treatment cards
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deployment
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Recommended deployment target: Vercel.
+
+1. Push this repository to GitHub.
+2. Import the repository into Vercel.
+3. Add `GEMINI_API_KEY` in Vercel environment settings.
+4. Deploy.
+
+## Notes
+
+- This is the first project prompt implementation and can be extended in the next prompt.
+- Initial UI direction references the provided design zip while keeping a clean Next.js component architecture.

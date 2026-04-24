@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background: linear-gradient(160deg, #e8f5e9 0%, #fff8e7 100%);
+  min-height: 100vh;
+  color: #1f2937;
+  font-family: var(--font-geist-sans), sans-serif;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.38);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 14px 34px rgba(46, 125, 50, 0.08);
+}
