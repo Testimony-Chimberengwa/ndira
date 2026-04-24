@@ -1,69 +1,206 @@
 "use client";
 
-import { useState } from "react";
-import axios from "axios";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Send } from "lucide-react";
-import VoiceInput from "@/components/ui/VoiceInput";
-import GlassCard from "@/components/ui/GlassCard";
-import type { DiagnoseRequest, DiagnoseResponse } from "@/lib/types";
+import { motion } from "framer-motion";
+import { ArrowUp, Loader2, Mic } from "lucide-react";
 
-type FormData = {
-  message: string;
+type ChatInputProps = {
+  onSubmit: (description: string) => void;
+  isLoading: boolean;
 };
 
-export default function ChatInput() {
-  const { register, handleSubmit, setValue, reset } = useForm<FormData>();
-  const [result, setResult] = useState<DiagnoseResponse | null>(null);
-  const [loading, setLoading] = useState(false);
+type FormValues = {
+  description: string;
+};
 
-  async function onSubmit(values: FormData) {
-    setLoading(true);
-    try {
-      const { data } = await axios.post<DiagnoseResponse, { data: DiagnoseResponse }, DiagnoseRequest>(
-        "/api/diagnose",
-        { message: values.message }
-      );
-      setResult(data);
-      reset();
-    } finally {
-      setLoading(false);
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
+
+type SpeechRecognitionLike = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start: () => void;
+  stop: () => void;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onend: (() => void) | null;
+  onerror: ((event: { error?: string }) => void) | null;
+};
+
+type SpeechRecognitionEventLike = {
+  results: ArrayLike<ArrayLike<{ transcript: string }>>;
+};
+
+export default function ChatInput({ onSubmit, isLoading }: ChatInputProps) {
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    setError,
+    clearErrors,
+    formState: { errors },
+  } = useForm<FormValues>({ defaultValues: { description: "" } });
+  const [isListening, setIsListening] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const toastTimerRef = useRef<number | null>(null);
+
+  const speechRecognition = useMemo(() => {
+    if (typeof window === "undefined") {
+      return null;
     }
+
+    const speechWindow = window as Window & {
+      SpeechRecognition?: SpeechRecognitionConstructor;
+      webkitSpeechRecognition?: SpeechRecognitionConstructor;
+    };
+
+    return speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition ?? null;
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) {
+        window.clearTimeout(toastTimerRef.current);
+      }
+
+      recognitionRef.current?.stop();
+    };
+  }, []);
+
+  function showToast(message: string) {
+    setToast(message);
+
+    if (toastTimerRef.current) {
+      window.clearTimeout(toastTimerRef.current);
+    }
+
+    toastTimerRef.current = window.setTimeout(() => {
+      setToast(null);
+    }, 2800);
+  }
+
+  function startSpeechRecognition() {
+    if (!speechRecognition) {
+      console.warn("Web Speech API is not supported in this browser.");
+      showToast("Voice input is not supported in this browser.");
+      return;
+    }
+
+    const recognition = new speechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = "en-US";
+
+    recognition.onresult = (event) => {
+      const transcript = event.results?.[0]?.[0]?.transcript ?? "";
+
+      if (transcript) {
+        setValue("description", transcript, { shouldValidate: true, shouldDirty: true });
+        clearErrors("description");
+      }
+    };
+
+    recognition.onerror = () => {
+      setIsListening(false);
+      showToast("Could not capture voice input. Please try again.");
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+    setIsListening(true);
+    recognition.start();
+  }
+
+  function handleChipClick(text: string) {
+    setValue("description", text, { shouldValidate: true, shouldDirty: true });
+    clearErrors("description");
+  }
+
+  function handleFormSubmit(values: FormValues) {
+    if (values.description.trim().length < 10) {
+      setError("description", {
+        type: "minLength",
+        message: "Please describe the problem in more detail",
+      });
+      return;
+    }
+
+    onSubmit(values.description.trim());
   }
 
   return (
-    <GlassCard>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <label htmlFor="message" className="block text-lg font-bold text-slate-900">
-          What is happening in your field?
-        </label>
-        <textarea
-          id="message"
-          rows={5}
-          placeholder="Example: My maize leaves are yellow and I see tiny webbing below the leaves."
-          className="w-full rounded-2xl border border-white/70 bg-white/60 p-4 text-sm outline-none ring-primary/40 placeholder:text-slate-500 focus:ring"
-          {...register("message", { required: true })}
-        />
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+    >
+      {toast ? (
+        <div className="mb-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-900 shadow-lg">
+          {toast}
+        </div>
+      ) : null}
 
-        <div className="flex items-center justify-between gap-3">
-          <VoiceInput onTranscript={(text) => setValue("message", text)} />
+      <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+        <div>
+          <textarea
+            rows={3}
+            placeholder="Describe what you see on your crops — leaves, soil, colour, insects…"
+            className="min-h-[150px] w-full resize-none rounded-[24px] border border-white/60 bg-[rgba(255,255,255,0.45)] p-5 text-sm leading-6 text-slate-800 outline-none placeholder:text-slate-500 focus:border-emerald-200 focus:ring-2 focus:ring-primary/20"
+            {...register("description", {
+              required: "Please describe the problem in more detail",
+              minLength: {
+                value: 10,
+                message: "Please describe the problem in more detail",
+              },
+            })}
+          />
+          {errors.description ? (
+            <p className="mt-2 text-sm font-medium text-red-600">{errors.description.message}</p>
+          ) : null}
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {[
+            "Yellow maize leaves",
+            "Holes in my tobacco",
+            "Soil dry, plants wilting",
+          ].map((chip) => (
+            <button
+              key={chip}
+              type="button"
+              onClick={() => handleChipClick(chip)}
+              className="rounded-full border border-white/70 bg-white/50 px-4 py-2 text-sm font-semibold text-emerald-900 transition hover:bg-white/75"
+            >
+              {chip}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center justify-between gap-3 pt-1">
+          <button
+            type="button"
+            onClick={startSpeechRecognition}
+            aria-pressed={isListening}
+            className="relative flex h-12 w-12 items-center justify-center rounded-full border border-white/70 bg-white/50 text-emerald-900 transition hover:bg-white/75"
+          >
+            {isListening ? <span className="absolute h-4 w-4 animate-ping rounded-full bg-red-500/70" /> : null}
+            {isListening ? <span className="absolute h-2.5 w-2.5 rounded-full bg-red-600" /> : null}
+            <Mic className="relative h-5 w-5" />
+          </button>
+
           <button
             type="submit"
-            disabled={loading}
-            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+            disabled={isLoading}
+            className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-emerald-800 text-white shadow-[0_10px_20px_rgba(22,101,52,0.25)] transition hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <Send className="h-4 w-4" />
-            {loading ? "Diagnosing..." : "Diagnose"}
+            {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowUp className="h-5 w-5" />}
           </button>
         </div>
       </form>
-
-      {result ? (
-        <div className="mt-6 rounded-2xl border border-white/70 bg-white/50 p-4">
-          <p className="text-sm font-semibold uppercase tracking-wider text-primary">AI Assessment</p>
-          <p className="mt-2 text-slate-800">{result.diagnosis}</p>
-        </div>
-      ) : null}
-    </GlassCard>
+    </motion.div>
   );
 }

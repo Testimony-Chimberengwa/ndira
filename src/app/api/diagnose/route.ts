@@ -1,18 +1,26 @@
-import { NextResponse } from "next/server";
-import { getDiagnosisFromGemini } from "@/lib/gemini";
-import type { DiagnoseRequest } from "@/lib/types";
+import { NextRequest, NextResponse } from "next/server";
+import { diagnoseCrop } from "@/lib/gemini";
+import type { DiagnosisResult } from "@/lib/types";
 
-export async function POST(request: Request) {
+type DiagnoseRequestBody = {
+  description: string;
+  cropType?: string;
+  region?: string;
+  soilCondition?: string;
+};
+
+export async function POST(request: NextRequest) {
   try {
-    const body = (await request.json()) as DiagnoseRequest;
+    const body = (await request.json()) as DiagnoseRequestBody;
 
-    if (!body?.message?.trim()) {
-      return NextResponse.json({ error: "Message is required." }, { status: 400 });
+    if (!body?.description?.trim()) {
+      return NextResponse.json({ error: "Description is required" }, { status: 400 });
     }
 
-    const response = await getDiagnosisFromGemini(body.message);
-    return NextResponse.json(response);
-  } catch {
-    return NextResponse.json({ error: "Unable to process diagnosis." }, { status: 500 });
+    const diagnosis: DiagnosisResult = await diagnoseCrop(body);
+    return NextResponse.json(diagnosis, { status: 200 });
+  } catch (error) {
+    console.error("Diagnosis failed:", error);
+    return NextResponse.json({ error: "Diagnosis failed. Please try again." }, { status: 500 });
   }
 }

@@ -1,37 +1,35 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import type { DiagnoseResponse } from "@/lib/types";
+import type { DiagnosisResult } from "@/lib/types";
 
-const apiKey = process.env.GEMINI_API_KEY;
+const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY ?? "");
+const model = gemini.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-const model = apiKey
-  ? new GoogleGenerativeAI(apiKey).getGenerativeModel({ model: "gemini-1.5-flash" })
-  : null;
-
-const fallbackDiagnosis: DiagnoseResponse = {
-  diagnosis: "Potential nutrient deficiency with mild pest pressure.",
-  confidence: 78,
-  riskLevel: "medium",
-  treatment: [
-    { title: "Inspect leaf undersides", details: "Check for mites or aphids before spraying." },
-    { title: "Adjust irrigation", details: "Keep soil evenly moist for 3 to 5 days." },
-    { title: "Apply balanced foliar feed", details: "Use a low-dose micronutrient spray in the evening." },
-  ],
-};
-
-export async function getDiagnosisFromGemini(message: string): Promise<DiagnoseResponse> {
-  if (!model) {
-    return fallbackDiagnosis;
+export async function diagnoseCrop(input: {
+  description: string;
+  cropType?: string;
+  region?: string;
+  soilCondition?: string;
+}): Promise<DiagnosisResult> {
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error("Missing GEMINI_API_KEY environment variable.");
   }
 
-  const prompt = `You are an agronomy assistant. Return strict JSON with keys diagnosis, confidence (0-100), riskLevel (low|medium|high), treatment (array of 3 steps with title and details). Farmer message: ${message}`;
+  const systemContext =
+    "You are Ndira, an expert agronomist specializing in sub-Saharan African smallholder farming. You have deep knowledge of crops grown in Zimbabwe and the surrounding region including maize, tobacco, groundnuts, sorghum, sweet potatoes, and vegetables. When given a farmer's description of their crop problem, you must respond ONLY with a valid JSON object - no markdown, no explanation, no backticks. The JSON must follow this exact structure:\n{\n  pest_or_disease: string,\n  confidence_percent: number,\n  severity: 'low' | 'medium' | 'high' | 'critical',\n  estimated_yield_loss_percent: number,\n  summary: string (2 sentences max),\n  treatment_steps: [\n    { step: number, icon: string (single emoji), title: string, description: string, urgency: 'immediate' | 'within_3_days' | 'this_week' }\n  ],\n  prevention_tip: string,\n  local_remedy: string (affordable, locally available solution)\n}";
 
-  const result = await model.generateContent(prompt);
-  const text = result.response.text();
+  const prompt = `${systemContext}\n\nFarmer input:\n- Description: ${input.description}\n- Crop type: ${input.cropType ?? "Not provided"}\n- Region: ${input.region ?? "Not provided"}\n- Soil condition: ${input.soilCondition ?? "Not provided"}\n\nReturn only valid JSON.`;
 
-  try {
-    const parsed = JSON.parse(text) as DiagnoseResponse;
-    return parsed;
-  } catch {
-    return fallbackDiagnosis;
-  }
+  const response = await model.generateContent(prompt);
+  const rawText = response.response.text().trim();
+  const normalizedText = rawText
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/\s*```$/, "")
+    .trim();
+
+  return JSON.parse(normalizedText) as DiagnosisResult;
+}
+
+export async function getDiagnosisFromGemini(message: string): Promise<DiagnosisResult> {
+  return diagnoseCrop({ description: message });
 }
