@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { diagnoseCrop } from "@/lib/gemini";
+import { diagnoseCrop } from "@/lib/openrouter";
 import type { DiagnosisResult } from "@/lib/types";
 
 type DiagnoseRequestBody = {
