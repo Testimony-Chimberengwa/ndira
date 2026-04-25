@@ -14,3 +14,66 @@ export interface DiagnosisResult {
   prevention_tip: string;
   local_remedy: string;
 }
+
+export interface FarmLocation {
+  latitude: number;
+  longitude: number;
+  city?: string;
+  region?: string;
+  country?: string;
+  label?: string;
+}
+
+export interface DiagnoseRequest {
+  description: string;
+  cropType?: string;
+  region?: string;
+  soilCondition?: string;
+  location?: FarmLocation;
+  imageDataUrl?: string;
+  imageName?: string;
+}
+
+export interface NewsArticle {
+  title: string;
+  link: string;
+  source: string;
+  publishedAt?: string;
+  summary?: string;
+}
+
+export interface WeatherPoint {
+  day: string;
+  highC: number;
+  lowC: number;
+  rainChancePercent: number;
+}
+
+export interface WeatherIntel {
+  locationLabel: string;
+  updatedAt: string;
+  points: WeatherPoint[];
+  sourceNotes: string[];
+}
+
+export interface PlannerZone {
+  name: string;
+  purpose: string;
+  areaPercent: number;
+}
+
+export interface FarmPlanResult {
+  planTitle: string;
+  summary: string;
+  layoutZones: PlannerZone[];
+  budgetSplit: {
+    soilAndBeds: number;
+    irrigation: number;
+    livestockOrStructures: number;
+    storageAndPaths: number;
+  };
+  weeklyActions: string[];
+  illustrationPrompt: string;
+  illustrationUrl: string;
+  fallbackUsed: boolean;
+}

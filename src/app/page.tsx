@@ -7,23 +7,30 @@ import { Leaf } from "lucide-react";
 import { motion } from "framer-motion";
 import ChatInput from "@/components/ChatInput";
 import GlassCard from "@/components/ui/GlassCard";
-import NavBar, { type NavTab } from "@/components/ui/NavBar";
-import type { DiagnosisResult } from "@/lib/types";
+import NavBar from "@/components/ui/NavBar";
+import type { DiagnosisResult, FarmLocation } from "@/lib/types";
+
+type DiagnosisSubmission = {
+  description: string;
+  location?: FarmLocation | null;
+  imageDataUrl?: string;
+  imageName?: string;
+};
 
 export default function Home() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<NavTab>("home");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(description: string) {
+  async function handleSubmit(payload: DiagnosisSubmission) {
     setIsLoading(true);
     setError(null);
 
     try {
-      const { data } = await axios.post<DiagnosisResult>("/api/diagnose", { description });
+      const { data } = await axios.post<DiagnosisResult>("/api/diagnose", payload);
       if (typeof window !== "undefined") {
         window.localStorage.setItem("ndira_last_diagnosis", JSON.stringify(data));
+        window.localStorage.setItem("ndira_last_context", JSON.stringify({ location: payload.location ?? null }));
       }
       router.push("/dashboard");
     } catch {
@@ -75,7 +82,7 @@ export default function Home() {
         <p className="mt-4 text-center text-sm text-slate-500">Trusted by farmers across Zimbabwe 🌱</p>
       </div>
 
-      <NavBar activeTab={activeTab} onTabChange={setActiveTab} />
+      <NavBar activeTab="home" />
     </main>
   );
 }
