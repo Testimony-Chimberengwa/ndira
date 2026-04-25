@@ -18,6 +18,12 @@ type OpenMeteoResponse = {
     temperature: number;
     weathercode: number;
   };
+  daily?: {
+    time?: string[];
+    temperature_2m_max?: number[];
+    temperature_2m_min?: number[];
+    precipitation_probability_max?: number[];
+  };
 };
 
 const DEFAULT_LAT = -17.8252;
@@ -63,6 +69,23 @@ function getWeatherIcon(condition: string) {
   return Cloud;
 }
 
+function buildForecastNote(daily?: OpenMeteoResponse["daily"]) {
+  const rainChance = daily?.precipitation_probability_max?.slice(0, 3).filter((value): value is number => typeof value === "number");
+  const maxRainChance = rainChance && rainChance.length ? Math.max(...rainChance) : null;
+  const highs = daily?.temperature_2m_max?.slice(0, 3).filter((value): value is number => typeof value === "number");
+  const maxHigh = highs && highs.length ? Math.max(...highs) : null;
+
+  if (maxRainChance !== null && maxRainChance >= 60) {
+    return `Rain likely in the next 3 days (${maxRainChance}% max chance)`;
+  }
+
+  if (maxHigh !== null && maxHigh >= 32) {
+    return `Hot spell ahead. Keep crops watered and monitor for stress`;
+  }
+
+  return "Forecast looks steady for field checks";
+}
+
 export default function WeatherStrip({
   city,
   temp,
@@ -71,7 +94,7 @@ export default function WeatherStrip({
   lat = DEFAULT_LAT,
   lon = DEFAULT_LON,
 }: WeatherStripProps) {
-  const [weather, setWeather] = useState({ temp, condition, riskNote });
+  const [weather, setWeather] = useState({ temp, condition, riskNote, forecastNote: "Forecast looks steady for field checks" });
 
   useEffect(() => {
     let isMounted = true;
@@ -79,7 +102,7 @@ export default function WeatherStrip({
     async function loadWeather() {
       try {
         const response = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=3&timezone=auto`
         );
         const data = (await response.json()) as OpenMeteoResponse;
         const current = data.current_weather;
@@ -93,10 +116,11 @@ export default function WeatherStrip({
           temp: Math.round(current.temperature),
           condition: nextCondition,
           riskNote: getRiskNote(nextCondition, current.temperature),
+          forecastNote: buildForecastNote(data.daily),
         });
       } catch {
         if (isMounted) {
-          setWeather({ temp, condition, riskNote });
+          setWeather({ temp, condition, riskNote, forecastNote: "Forecast looks steady for field checks" });
         }
       }
     }
@@ -121,6 +145,7 @@ export default function WeatherStrip({
         <p className="text-sm text-slate-600">
           {weather.temp}°C <span className="mx-1 text-slate-400">•</span> {weather.condition}
         </p>
+        <p className="mt-1 text-xs font-medium text-slate-500">{weather.forecastNote}</p>
       </div>
 
       <p className="max-w-[10rem] text-right text-xs font-semibold leading-5 text-amber-700">
