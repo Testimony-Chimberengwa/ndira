@@ -152,11 +152,46 @@ export default function PlannerPage() {
           </GlassCard>
 
           <GlassCard className="p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Detailed Cost Breakdown</p>
+            <div className="mt-3 space-y-3">
+              {result.detailedCosts.map((cost) => (
+                <div key={cost.item} className="rounded-xl bg-white/40 p-3 border border-white/40">
+                  <div className="flex justify-between items-start">
+                    <span className="font-bold text-emerald-950 text-sm">{cost.item}</span>
+                    <span className="text-emerald-700 font-bold text-sm">{cost.estimatedCost}</span>
+                  </div>
+                  <p className="text-xs text-slate-600 mt-1">{cost.description}</p>
+                </div>
+              ))}
+            </div>
+          </GlassCard>
+
+          <GlassCard className="p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Material Sourcing</p>
+            <div className="mt-3 space-y-3">
+              {result.materialSourcing.map((source) => (
+                <div key={source.material} className="flex flex-col gap-1">
+                  <span className="font-bold text-emerald-950 text-sm">{source.material}</span>
+                  <a 
+                    href={source.sourceLink} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-emerald-700 text-xs hover:underline inline-flex items-center gap-1"
+                  >
+                    View sourcing options
+                  </a>
+                  <p className="text-[10px] text-slate-500 italic">{source.note}</p>
+                </div>
+              ))}
+            </div>
+          </GlassCard>
+
+          <GlassCard className="p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">AI Illustration</p>
             <p className="mt-1 text-xs text-slate-500">
               {result.fallbackUsed
                 ? "Generated with backup image rendering pipeline."
-                : "Generated from OpenRouter image model output."}
+                : "Visual concept of the proposed layout."}
             </p>
             <div className="mt-3 overflow-hidden rounded-2xl border border-white/70 bg-white/60 p-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}

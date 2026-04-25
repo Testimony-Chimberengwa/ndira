@@ -73,6 +73,16 @@ export interface FarmPlanResult {
     storageAndPaths: number;
   };
   weeklyActions: string[];
+  detailedCosts: {
+    item: string;
+    estimatedCost: string;
+    description: string;
+  }[];
+  materialSourcing: {
+    material: string;
+    sourceLink: string;
+    note: string;
+  }[];
   illustrationPrompt: string;
   illustrationUrl: string;
   fallbackUsed: boolean;
