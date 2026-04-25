@@ -24,10 +24,10 @@ export default function PlannerPage() {
   const budgetEntries = useMemo(() => {
     if (!result) return [] as Array<{ label: string; value: number }>;
     return [
-      { label: "Soil and beds", value: result.budgetSplit.soilAndBeds },
-      { label: "Irrigation", value: result.budgetSplit.irrigation },
-      { label: "Livestock/structures", value: result.budgetSplit.livestockOrStructures },
-      { label: "Storage and paths", value: result.budgetSplit.storageAndPaths },
+      { label: "Soil and beds", value: result.budgetSplit?.soilAndBeds ?? 0 },
+      { label: "Irrigation", value: result.budgetSplit?.irrigation ?? 0 },
+      { label: "Livestock/structures", value: result.budgetSplit?.livestockOrStructures ?? 0 },
+      { label: "Storage and paths", value: result.budgetSplit?.storageAndPaths ?? 0 },
     ];
   }, [result]);
 
@@ -128,7 +128,7 @@ export default function PlannerPage() {
             <p className="mt-2 text-sm leading-6 text-slate-700">{result.summary}</p>
             <p className="mt-3 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Weekly Actions</p>
             <div className="mt-2 space-y-1">
-              {result.weeklyActions.map((step) => (
+              {result.weeklyActions?.map((step) => (
                 <p key={step} className="text-sm text-slate-700">• {step}</p>
               ))}
             </div>
@@ -154,7 +154,7 @@ export default function PlannerPage() {
           <GlassCard className="p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Detailed Cost Breakdown</p>
             <div className="mt-3 space-y-3">
-              {result.detailedCosts.map((cost) => (
+              {result.detailedCosts?.map((cost) => (
                 <div key={cost.item} className="rounded-xl bg-white/40 p-3 border border-white/40">
                   <div className="flex justify-between items-start">
                     <span className="font-bold text-emerald-950 text-sm">{cost.item}</span>
@@ -169,7 +169,7 @@ export default function PlannerPage() {
           <GlassCard className="p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Material Sourcing</p>
             <div className="mt-3 space-y-3">
-              {result.materialSourcing.map((source) => (
+              {result.materialSourcing?.map((source) => (
                 <div key={source.material} className="flex flex-col gap-1">
                   <span className="font-bold text-emerald-950 text-sm">{source.material}</span>
                   <a 
